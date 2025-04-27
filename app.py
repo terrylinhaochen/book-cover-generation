@@ -176,7 +176,7 @@ def display_images(images: Dict[str, List[Dict]]):
             with cols[col_idx]:
                 # Convert bytes to PIL Image
                 img = Image.open(io.BytesIO(img_data["bytes"]))
-                st.image(img, caption=f"Cover {i+1}", use_column_width=True)
+                st.image(img, caption=f"Cover {i+1}", use_container_width=True)
                 
                 with st.expander("View description"):
                     st.write(img_data["description"])
@@ -250,7 +250,7 @@ Keep the description between 100-150 words."""
     
     default_config = {
         "system_prompt": default_system_prompt,
-        "num_variations": 3,
+        "num_variations": 1,
         "image_quality": "medium",
         "image_size": "1024x1024"
     }
@@ -317,8 +317,8 @@ Keep the description between 100-150 words."""
                 help="Choose image dimensions (width x height)"
             )
             
-        # Advanced options section
-        with st.expander("Advanced Options"):
+        # Advanced options section - renamed to Prompt Configurations
+        with st.expander("Prompt Configurations"):
             custom_system_prompt = st.text_area(
                 "Customize description generation prompt:",
                 value=config["system_prompt"],
