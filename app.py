@@ -196,12 +196,22 @@ def encode_config_to_url(config):
     # Encode system prompt to base64 to avoid URL encoding issues
     encoded_prompt = base64.b64encode(config["system_prompt"].encode()).decode()
     
+    # Encode book names if present
+    book_names_str = ""
+    if "book_names" in config and config["book_names"]:
+        book_names_str = "|".join(config["book_names"])
+        book_names_str = base64.b64encode(book_names_str.encode()).decode()
+    
     params = {
         "prompt": encoded_prompt,
         "variations": config["num_variations"],
         "quality": config["image_quality"],
         "size": config["image_size"]
     }
+    
+    # Add book names if available
+    if book_names_str:
+        params["books"] = book_names_str
     
     # Generate parameters string
     param_str = "&".join([f"{k}={urllib.parse.quote(str(v))}" for k, v in params.items()])
@@ -223,13 +233,22 @@ def decode_config_from_params(params):
         try:
             config["num_variations"] = int(params["variations"])
         except:
-            config["num_variations"] = 3
+            config["num_variations"] = 1  # Updated default to 1
     
     if "quality" in params:
         config["image_quality"] = params["quality"]
     
     if "size" in params:
         config["image_size"] = params["size"]
+        
+    # Extract book names if present
+    if "books" in params:
+        try:
+            encoded_books = params["books"]
+            books_str = base64.b64decode(encoded_books).decode()
+            config["book_names"] = books_str.split("|") if books_str else []
+        except:
+            config["book_names"] = []
     
     return config
 
@@ -286,6 +305,7 @@ Keep the description between 100-150 words."""
         # Multiple book names input
         book_names_text = st.text_area(
             "Enter book name(s), one per line:",
+            value="" if "book_names" not in config else "\n".join(config["book_names"]),
             help="Enter one or more book names, with each name on a new line."
         )
         
@@ -330,15 +350,18 @@ Keep the description between 100-150 words."""
         submitted = st.form_submit_button("Generate Book Covers")
     
     # Generate configuration URL after the form
+    book_names = [name.strip() for name in book_names_text.split("\n") if name.strip()]
+    
     current_config = {
         "system_prompt": custom_system_prompt,
         "num_variations": num_variations,
         "image_quality": image_quality,
-        "image_size": image_size
+        "image_size": image_size,
+        "book_names": book_names
     }
     
     # Only show sharing section if the config differs from default or if config was loaded from URL
-    config_is_custom = (current_config["system_prompt"].strip() != default_system_prompt.strip() or
+    config_is_custom = (current_config["system_prompt"].strip() != default_config["system_prompt"].strip() or
                        current_config["num_variations"] != default_config["num_variations"] or
                        current_config["image_quality"] != default_config["image_quality"] or
                        current_config["image_size"] != default_config["image_size"] or
@@ -371,6 +394,13 @@ Keep the description between 100-150 words."""
                 copyButton.addEventListener('click', function() {
                     navigator.clipboard.writeText(textToCopy).then(function() {
                         copySuccess.style.display = 'inline';
+                        
+                        // Show Streamlit toast notification
+                        window.parent.postMessage({
+                            type: 'streamlit:showSuccessToast',
+                            message: 'Configuration link copied to clipboard!'
+                        }, '*');
+                        
                         setTimeout(function() {
                             copySuccess.style.display = 'none';
                         }, 2000);
@@ -404,7 +434,7 @@ Keep the description between 100-150 words."""
             st.write(f"- {name}")
         
         # Check if custom prompt is different from default
-        if custom_system_prompt.strip() != default_system_prompt.strip():
+        if custom_system_prompt.strip() != default_config["system_prompt"].strip():
             st.info("Using custom description generation prompt.")
             custom_prompt_to_use = custom_system_prompt
         else:
