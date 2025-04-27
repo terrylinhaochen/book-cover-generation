@@ -214,22 +214,22 @@ def decode_config_from_params(params):
     if "prompt" in params:
         try:
             # Decode base64 encoded prompt
-            encoded_prompt = params["prompt"][0]
+            encoded_prompt = params["prompt"]
             config["system_prompt"] = base64.b64decode(encoded_prompt).decode()
         except:
             config["system_prompt"] = None
     
     if "variations" in params:
         try:
-            config["num_variations"] = int(params["variations"][0])
+            config["num_variations"] = int(params["variations"])
         except:
             config["num_variations"] = 3
     
     if "quality" in params:
-        config["image_quality"] = params["quality"][0]
+        config["image_quality"] = params["quality"]
     
     if "size" in params:
-        config["image_size"] = params["size"][0]
+        config["image_size"] = params["size"]
     
     return config
 
@@ -256,14 +256,14 @@ Keep the description between 100-150 words."""
     }
     
     # Check for URL parameters
-    query_params = st.experimental_get_query_params()
+    query_params = st.query_params
     config_from_url = decode_config_from_params(query_params)
     
     # Merge defaults with URL params
     config = {**default_config, **{k: v for k, v in config_from_url.items() if v is not None}}
     
     # Admin settings (only shown when admin=true in URL)
-    if "admin" in query_params and query_params["admin"][0].lower() == "true":
+    if "admin" in query_params and query_params["admin"] == "true":
         with st.expander("⚙️ Administrator Settings", expanded=True):
             st.write("These settings are for server administrators.")
             
