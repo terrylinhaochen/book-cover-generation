@@ -24,6 +24,42 @@ st.set_page_config(
     layout="wide"
 )
 
+# Add custom CSS to fix scrolling issues
+st.markdown("""
+<style>
+    .main .block-container {
+        padding-bottom: 5rem;
+        overflow-y: auto;
+    }
+    /* Fix for custom buttons potentially blocking scroll */
+    #copy-button-container {
+        position: relative;
+        z-index: 1;
+    }
+    /* Ensure main content area is scrollable */
+    [data-testid="stAppViewContainer"] {
+        overflow: auto;
+    }
+    /* Allow vertical scrolling on the main content */
+    section[data-testid="stVerticalBlock"] {
+        overflow-y: visible !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Helper function to handle query params in different Streamlit versions
+def get_query_params():
+    """
+    Get query parameters in a version-compatible way.
+    Works with both newer (st.query_params) and older (st.experimental_get_query_params) Streamlit versions.
+    """
+    try:
+        # Try the new method first (Streamlit >= 1.20.0)
+        return st.query_params
+    except AttributeError:
+        # Fall back to the old method for older Streamlit versions
+        return st.experimental_get_query_params()
+
 def generate_cover_descriptions(book_names: List[str], num_variations: int, custom_system_prompt: str = None) -> Dict[str, List[str]]:
     """
     Generate multiple cover descriptions for each book name using GPT-4o
@@ -182,7 +218,7 @@ def display_images(images: Dict[str, List[Dict]]):
             with cols[col_idx]:
                 # Convert bytes to PIL Image
                 img = Image.open(io.BytesIO(img_data["bytes"]))
-                st.image(img, caption=f"Cover {i+1}", use_container_width=True)
+                st.image(img, caption=f"Cover {i+1}", width=None)
                 
                 with st.expander("View description"):
                     st.write(img_data["description"])
@@ -287,14 +323,15 @@ Keep the description between 80-120 words."""
     }
     
     # Check for URL parameters
-    query_params = st.query_params
+    query_params = get_query_params()
     config_from_url = decode_config_from_params(query_params)
     
     # Merge defaults with URL params
     config = {**default_config, **{k: v for k, v in config_from_url.items() if v is not None}}
     
     # Admin settings (only shown when admin=true in URL)
-    if "admin" in query_params and query_params["admin"] == "true":
+    admin_param = query_params.get("admin", [""])[0] if isinstance(query_params.get("admin", []), list) else query_params.get("admin", "")
+    if admin_param.lower() == "true":
         with st.expander("⚙️ Administrator Settings", expanded=True):
             st.write("These settings are for server administrators.")
             
@@ -389,7 +426,7 @@ Keep the description between 80-120 words."""
             
             st.code(shareable_url, language="text")
             
-            # Use JavaScript to copy to clipboard without page refresh
+            # Use JavaScript to copy to clipboard without page refresh - modified to avoid scrolling issues
             st.markdown("""
             <div id="copy-button-container">
                 <button id="copy-button" style="background-color:#4CAF50; color:white; border:none; padding:10px 20px; text-align:center; text-decoration:none; display:inline-block; font-size:16px; margin:4px 2px; cursor:pointer; border-radius:4px;">
@@ -399,24 +436,32 @@ Keep the description between 80-120 words."""
             </div>
             
             <script>
-                const copyButton = document.getElementById('copy-button');
-                const copySuccess = document.getElementById('copy-success');
-                const textToCopy = `""" + shareable_url + """`;
-                
-                copyButton.addEventListener('click', function() {
-                    navigator.clipboard.writeText(textToCopy).then(function() {
-                        copySuccess.style.display = 'inline';
-                        
-                        // Show Streamlit toast notification
-                        window.parent.postMessage({
-                            type: 'streamlit:showSuccessToast',
-                            message: 'Configuration link copied to clipboard!'
-                        }, '*');
-                        
-                        setTimeout(function() {
-                            copySuccess.style.display = 'none';
-                        }, 2000);
-                    });
+                // Wait for DOM to fully load
+                window.addEventListener('DOMContentLoaded', (event) => {
+                    const copyButton = document.getElementById('copy-button');
+                    const copySuccess = document.getElementById('copy-success');
+                    const textToCopy = `""" + shareable_url + """`;
+                    
+                    if (copyButton) {
+                        copyButton.addEventListener('click', function(e) {
+                            // Prevent default to avoid page jumping
+                            e.preventDefault();
+                            
+                            navigator.clipboard.writeText(textToCopy).then(function() {
+                                copySuccess.style.display = 'inline';
+                                
+                                // Show Streamlit toast notification
+                                window.parent.postMessage({
+                                    type: 'streamlit:showSuccessToast',
+                                    message: 'Configuration link copied to clipboard!'
+                                }, '*');
+                                
+                                setTimeout(function() {
+                                    copySuccess.style.display = 'none';
+                                }, 2000);
+                            });
+                        });
+                    }
                 });
             </script>
             """, unsafe_allow_html=True)
