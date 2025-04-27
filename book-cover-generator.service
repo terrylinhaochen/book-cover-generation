@@ -1,0 +1,14 @@
+[Unit]
+Description=Book Cover Generator Streamlit App
+After=network.target
+
+[Service]
+User=your_username
+WorkingDirectory=/path/to/cover_generation
+ExecStart=/path/to/cover_generation/venv/bin/streamlit run app.py
+Environment="OPENAI_API_KEY=your_key_here"
+Environment="SHARE_BASE_URL=your_public_url"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target 
