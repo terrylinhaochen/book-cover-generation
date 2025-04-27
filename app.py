@@ -39,11 +39,17 @@ def generate_cover_descriptions(book_names: List[str], num_variations: int, cust
     descriptions = {}
     
     # Default system prompt
-    default_system_prompt = """You are a skilled book cover designer. 
-    Create detailed, vivid descriptions for book covers that would be visually appealing and 
-    capture the essence of the book based on its title. 
-    Your descriptions should be specific and include details about composition, style, mood, colors, and imagery.
-    Keep the description between 100-150 words."""
+    default_system_prompt = """You are a skilled book cover designer specializing in simple, cartoonish art styles.
+Create descriptions for book covers with a minimalist, flat design aesthetic using simple shapes, clean lines,
+and solid background colors. Focus on creating playful, cartoonish imagery with limited detail. 
+Your descriptions should specify:
+- Simple character or object illustrations with minimal details
+- Flat design with limited or no shading
+- Bold, solid color backgrounds
+- Clean, simple line art
+- Minimalist composition focusing on a single central element or character
+- A modern, playful aesthetic suitable for all audiences
+Keep the description between 80-120 words."""
     
     # Use custom prompt if provided, otherwise use default
     system_prompt = custom_system_prompt if custom_system_prompt else default_system_prompt
@@ -261,11 +267,17 @@ def main():
     st.write("Generate multiple book cover designs using AI")
     
     # Default config values
-    default_system_prompt = """You are a skilled book cover designer. 
-Create detailed, vivid descriptions for book covers that would be visually appealing and 
-capture the essence of the book based on its title. 
-Your descriptions should be specific and include details about composition, style, mood, colors, and imagery.
-Keep the description between 100-150 words."""
+    default_system_prompt = """You are a skilled book cover designer specializing in simple, cartoonish art styles.
+Create descriptions for book covers with a minimalist, flat design aesthetic using simple shapes, clean lines,
+and solid background colors. Focus on creating playful, cartoonish imagery with limited detail. 
+Your descriptions should specify:
+- Simple character or object illustrations with minimal details
+- Flat design with limited or no shading
+- Bold, solid color backgrounds
+- Clean, simple line art
+- Minimalist composition focusing on a single central element or character
+- A modern, playful aesthetic suitable for all audiences
+Keep the description between 80-120 words."""
     
     default_config = {
         "system_prompt": default_system_prompt,
